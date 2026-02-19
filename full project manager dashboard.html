@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Project Manager Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: white;
+    }
+
+    header {
+      padding: 20px;
+      text-align: center;
+      background: rgba(0,0,0,0.3);
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    input, select {
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      margin: 5px 5px 5px 0;
+    }
+
+    button {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      background: #22c55e;
+      color: white;
+    }
+
+    .project-card, .task-card {
+      background: rgba(255,255,255,0.08);
+      padding: 15px;
+      border-radius: 12px;
+      margin: 10px 0;
+    }
+
+    .progress-bar {
+      background: #1e293b;
+      border-radius: 10px;
+      overflow: hidden;
+      height: 10px;
+      margin-top: 8px;
+    }
+
+    .progress {
+      height: 100%;
+      background: #22c55e;
+    }
+
+    .completed {
+      color: #22c55e;
+      font-weight: bold;
+    }
+
+  </style>
+</head>
+<body>
+
+<header>📊 Project Manager Dashboard</header>
+
+<div class="container">
+
+  <h2>📁 Add Project</h2>
+  <input type="text" id="projectInput" placeholder="Project Name">
+  <button onclick="addProject()">Add Project</button>
+
+  <div id="projectList"></div>
+
+  <h2>📅 Add Task</h2>
+  <input type="text" id="taskInput" placeholder="Task Name">
+  <select id="projectSelect">
+    <option value="">Select Project</option>
+  </select>
+  <button onclick="addTask()">Add Task</button>
+
+  <div id="taskList"></div>
+
+</div>
+
+<script>
+
+let projects = JSON.parse(localStorage.getItem("projects")) || [];
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+function addProject() {
+  const name = document.getElementById("projectInput").value.trim();
+  if (!name) {
+    alert("Enter project name");
+    return;
+  }
+
+  projects.push({ name });
+  localStorage.setItem("projects", JSON.stringify(projects));
+  document.getElementById("projectInput").value = "";
+
+  renderProjects();
+  renderProjectOptions();
+}
+
+function renderProjectOptions() {
+  const select = document.getElementById("projectSelect");
+  select.innerHTML = `<option value="">Select Project</option>`;
+
+  projects.forEach((project, index) => {
+    const option = document.createElement("option");
+    option.value = index;
+    option.textContent = project.name;
+    select.appendChild(option);
+  });
+}
+
+function addTask() {
+  const name = document.getElementById("taskInput").value.trim();
+  const projectIndex = document.getElementById("projectSelect").value;
+
+  if (!name) {
+    alert("Enter task name");
+    return;
+  }
+
+  if (projectIndex === "") {
+    alert("Please select a project");
+    return;
+  }
+
+  tasks.push({
+    name,
+    completed: false,
+    projectIndex: parseInt(projectIndex)
+  });
+
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+  document.getElementById("taskInput").value = "";
+
+  renderTasks();
+  renderProjects();
+}
+
+function toggleTask(index) {
+  tasks[index].completed = !tasks[index].completed;
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+  renderTasks();
+  renderProjects();
+}
+
+function renderProjects() {
+  const list = document.getElementById("projectList");
+  list.innerHTML = "";
+
+  projects.forEach((project, index) => {
+    const projectTasks = tasks.filter(t => t.projectIndex === index);
+    const completedTasks = projectTasks.filter(t => t.completed).length;
+
+    const progress = projectTasks.length === 0
+      ? 0
+      : (completedTasks / projectTasks.length) * 100;
+
+    const isCompleted = progress === 100 && projectTasks.length > 0;
+
+    list.innerHTML += `
+      <div class="project-card">
+        <strong>${project.name}</strong>
+        ${isCompleted ? "<span class='completed'> ✅ Completed</span>" : ""}
+        <div class="progress-bar">
+          <div class="progress" style="width:${progress}%"></div>
+        </div>
+        <small>${completedTasks}/${projectTasks.length} Tasks Completed</small>
+      </div>
+    `;
+  });
+}
+
+function renderTasks() {
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+
+  tasks.forEach((task, index) => {
+    list.innerHTML += `
+      <div class="task-card">
+        <input type="checkbox" ${task.completed ? "checked" : ""}
+        onchange="toggleTask(${index})">
+        ${task.name}
+      </div>
+    `;
+  });
+}
+
+renderProjects();
+renderTasks();
+renderProjectOptions();
+
+</script>
+
+</body>
+</html>
